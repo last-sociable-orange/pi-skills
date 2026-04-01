@@ -78,13 +78,13 @@ with open("rotated.pdf", "wb") as output:
 
 ### pdfplumber - Text and Table Extraction
 
-#### Extract Text with Layout
+#### Extract Text
 ```python
 import pdfplumber
 
 with pdfplumber.open("document.pdf") as pdf:
     for page in pdf.pages:
-        text = page.extract_text()
+        text = page.extract_text(layout=False)
         print(text)
 ```
 
@@ -192,9 +192,6 @@ For canvas-drawn text (not Paragraph objects), manually adjust font the size and
 ```bash
 # Extract text
 pdftotext input.pdf output.txt
-
-# Extract text preserving layout
-pdftotext -layout input.pdf output.txt
 
 # Extract specific pages
 pdftotext -f 1 -l 5 input.pdf output.txt  # Pages 1-5
@@ -305,6 +302,17 @@ with open("encrypted.pdf", "wb") as output:
 | Command line merge | qpdf | `qpdf --empty --pages ...` |
 | OCR scanned PDFs | pytesseract | Convert to image first |
 | Fill PDF forms | pdf-lib or pypdf (see FORMS.md) | See FORMS.md |
+
+## Output File
+Always keep original file name in the output file. Follow below general guide.
+
+### Extract Text
+<original_file_name>.txt
+
+### Other operations
+Add operation to the end of the file, for example:
+- <original_file_name>-merged.pdf
+- <original_file_name>-splitted.pdf
 
 ## Next Steps
 
