@@ -64,15 +64,54 @@ python pdf_to_markdown.py document.pdf --image-dir my_images
 
 ## Markdown Post Process
 
-Delete image OCR text  marked with "**----- Start of picture text -----**" and "**----- End of picture text -----**",  and any text in between.
+Use `markdown_cleanup.py` to remove image OCR text from the extracted Markdown.
 
-Example:
+### What it does
+
+Deletes text between "**----- Start of picture text -----**" and "**----- End of picture text -----**" (including the delimiters), which is image OCR text that can clutter the output.
+
+### Usage
+
+```bash
+python markdown_cleanup.py <input.md>
+```
+
+### Arguments
+
+| Argument | Description | Default |
+|----------|-------------|---------|
+| `input` | Input Markdown file (required) | - |
+
+### Examples
+
+```bash
+# Clean in place (overwrites original)
+python markdown_cleanup.py document.md
+```
+
+### Example
+
+**Before:**
+```markdown
+# Document Title
+
+Some content here.
 
 **----- Start of picture text -----**
 
 MODE<br>CONTROL<br>5<br>EN [(2)]<br>4<br>**----- End of picture text -----**<br>
 
+More content follows.
+```
 
+**After:**
+```markdown
+# Document Title
+
+Some content here.
+
+More content follows.
+```
 
 ## JSON Output Format
 
