@@ -7,25 +7,24 @@ A collection of specialized skills that extend the [Pi Coding Agent](https://git
 | Skill | Description |
 |-------|-------------|
 | **[docx](/docx)** | Create, read, edit, and manipulate Word documents (.docx). Supports formatting, tables of contents, headers, page numbers, and tracked changes. |
-| **[frontend-design](/frontend-design)** | Build production-grade web interfaces, landing pages, dashboards, and React components with high design quality. |
-| **[pdf](/pdf)** | Full PDF toolkit — read, extract text/tables, merge, split, rotate, watermark, create, fill forms, OCR, and encrypt/decrypt. |
+| **[pdf-to-markdown](/pdf-to-markdown)** | Extract PDF files to Markdown format using pymupdf4llm. Supports text, table, and image extraction with page-chunked JSON output. |
+| **[pdf-utils](/pdf-utils)** | PDF manipulation toolkit using PyMuPDF (fitz). Merge, split, rotate, watermark, encrypt, redact, extract text (plain), and convert pages to images. |
 | **[playwright-cli](/playwright-cli)** | Automate browser interactions and run Playwright tests via CLI. |
 | **[pptx](/pptx)** | Create, edit, and parse PowerPoint presentations. Handle slides, templates, speaker notes, and layouts. |
 | **[product-catalog-downloader](/product-catalog-downloader)** | Download semiconductor product catalogs from webpages using Playwright CLI. |
 | **[skill-creator](/skill-creator)** | Create new skills, improve existing ones, run evals, and optimize skill descriptions for better triggering accuracy. |
 | **[xlsx](/xlsx)** | Spreadsheet operations on .xlsx, .xlsm, .csv, .tsv files. Create, edit, format, chart, clean messy data. |
-| **[web-browse](/pi-web-browse)** | Search the web and fetch pages via a real headless browser (CDP) — ideal for JS-heavy or bot-protected sites. |
 
 ## Repository Structure
 
 ```
 skills/
 ├── docx/                   # Word document skill
-├── frontend-design/        # Web UI design skill
-├── pdf/                    # PDF manipulation skill
+├── pdf-to-markdown/        # PDF to Markdown extraction
+├── pdf-utils/              # PDF manipulation (PyMuPDF)
 ├── playwright-cli/         # Browser automation skill
 ├── pptx/                   # PowerPoint skill
-├── product-catalog-downloader/  # Semiconductor catalog downloader
+├── product-catalog-downloader/  # Product catalog downloader
 ├── skill-creator/          # Skill creation & eval tool
 ├── xlsx/                   # Spreadsheet skill
 └── README.md
@@ -41,7 +40,9 @@ Skills are YAML-based. Each skill directory should contain:
 
 ### Skill Definition Format
 
-```yaml
+Skills are defined as Markdown files with YAML front matter:
+
+```markdown
 ---
 name: my-skill
 description: "What this skill does and when to use it."
