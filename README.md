@@ -1,6 +1,7 @@
 # Pi Coding Agent Skills
 
-A collection of specialized skills that extend the [Pi Coding Agent](https://github.com/mariozechner/pi-coding-agent) with domain-specific capabilities.
+A collection of specialized skills that extend the [Pi Coding Agent](https://github.com/mariozechner/pi-coding-agent) with domain-specific capabilities. The main goal of using these skills is to assist hardware design workflow.
+Some skills are direct downloads from other repos. Check license file for the ownership and license of these skills.
 
 ## Skills Overview
 
