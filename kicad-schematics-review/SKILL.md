@@ -13,12 +13,11 @@ A structured checklist for reviewing KiCad schematic files.
 
 ```bash
 flatpak run --command=/app/bin/kicad-cli org.kicad.KiCad sch export bom \
-  --fields "Reference,Description,ManufacturerProductNumber" \
-  --labels "Ref,Description,ProductNumber" \
+  --fields "Reference,Description,ManufacturerProductNumber,DNP,Exclude from BOM" \
   -o <InputFile_BOM>.csv <InputFile>.kicad_sch
 ```
 
-Note: Adjust  `--fields` and `--labels` according to your schematics and library setup
+`DNP` and `Exclude from BOM` parts can be ignored during the review.
 
 ### 2. Export netlist
 
@@ -100,12 +99,27 @@ Consider circuits in a signal chain as a whole during review, even they are spre
 
 Exam these circuits with great details, yet keep in mind that they are all related and should be reviewed from system level as well as component level.
 
-### 4. Cover Power Domain Corner Cases
+### 4. Check Every Single Document Provided
 
-+ Check not only norminal design values, but also all corner cases (e.g. min/max input voltage, min/max output current) to make sure design works in all circumstances.
-+ Check associated circuits if their ratings are OK in all user cases, including normal operation and corner cases, and possible faulty conditions, e.g. LED driver OVP condition due to load open circuit.
+There maybe multiple documents in `Knowledge/` folder for one components, e.g. MCU may have datasheet, user manual, application notes. Design details are scattered in these documents, e.g. IO's electrical characteristics is written in the datasheet and IO mux table is stated in the user manual. Don't miss any documents during review. 
 
-### 5. Check IO Integrity and Susceptibility
+For better tracking contents of these documents, one solution is taking table of content of each document and putting them in a summary document. During review, check this summary document first to find out which documents and which chapters are relevant to the subject being reviewed. Then dive deep into each chapters to audit the circuit against the documents.
+
+### 5. Cover Corner Cases
+
++ Check not only nominal conditions, but also all corner cases to make sure design works in all circumstances.
+  + Check min/max input and output conditions, e.g. min/max input voltage, output current
+  + Consider component tolerance, e.g. resistor, inductor
+  + Consider component derating, e.g. inductor inductance, MLCC capacitor capacitance 
+
++ Check design margin:
+  + Generally leave 25% margin in worst case scenario, if not specified in the design, e.g. inductor rated current, resistor power rating
+  + MLCC capacitor voltage rating >= 2x voltage applied
+  + 5-10% margin for protection circuit, e.g. TVS standoff voltage, fuse hold current
+
++ Check associated circuits if their ratings are OK in all user cases, including normal operation and corner cases, and possible faulty conditions, e.g. LED driver OVP due to load open circuit, all related circuit shall be able to handle OVP voltage.
+
+### 5. Consider External Connections
 
 When connecting to external devices through IOs: 
 
