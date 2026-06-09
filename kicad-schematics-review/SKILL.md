@@ -7,20 +7,25 @@ description: "Use this skill to review KiCad schematic files (.kicad_sch) for co
 
 A structured checklist for reviewing KiCad schematic files.
 
-## Review Preparation
+## Preparation
 
-### 1. Export BOM
+Check BOM and netlist in project folder. Follow below steps if they are not available.
+
+### 1. BOM
+
+If BOM is not ready in the project folder, you can generate it using `kicad-cli`. Command may vary depending on your project setup and Kicad installation method and location. 
 
 ```bash
 flatpak run --command=/app/bin/kicad-cli org.kicad.KiCad sch export bom \
-  --fields "Reference,Description,ManufacturerProductNumber" \
-  --labels "Ref,Description,ProductNumber" \
+  --fields "Reference,Description,ManufacturerProductNumber,DNP,Exclude from BOM" \
   -o <InputFile_BOM>.csv <InputFile>.kicad_sch
 ```
 
-Note: Adjust  `--fields` and `--labels` according to your schematics and library setup
+`Exclude from BOM` parts can be ignored during the review, however you need to check if `DNP` parts are set correctly.
 
-### 2. Export netlist
+### 2. netlist
+
+If netlists ( Orcadpcb2 and PADS format) are not ready, you can generate them using below commands.
 
 ```bash
 # OrCAD PCB2 format, generating a *.net file
@@ -47,106 +52,312 @@ Check `Document/` folder in the project directory for existing design requiremen
 + `Document/` folder is the **ONLY** source of information for design requirements and design documents.
 + User must provide `Design Specification Document` that contains system level design requirements.
 
-### 5. Use Mermaid Skill
+### 5. Use Drawio Skill
 
-Use its syntax to generate block diagrams, connections, power trees, etc.,  
+Use it to generate block diagrams, power trees, circuits if you want to show component level connections, etc.,  Insert pictures in the markdown file and keep the original .drawio for user's future use.
 
-## Component-Specific Design Checklists
+## A Practical Review Work Flow
 
-The `design-checklists/` directory contains detailed checklists for specific component types. For each active component in the schematic, find the matching checklist and walk through it to catch device-specific issues.
+Here is a practical review work flow. Details are explained in later chapters.
 
-Available checklists:
+1. Check BOM/Netlist/Documents readiness
+2. High level grasp of system level design requirements, connectivity and power tree
+3. Break down design into subsystems and review them thoroughly against documents in `Knowledge/` and `Document`. This is a 3 steps process:
+   1. Review design from top down. The main focus of this step is making sure components and values used in design meet design requirements and design guidance from manufacturer.
+      + Start review from high level design requirements, e.g. input/output, connectivities. 
+      + Calculate design parameters from scratch using the information given in datasheet/design guide/application note in `Knowledge/` directory
+      + Check component selection and values considering corner cases and design margin
+   2. Review design from bottom up. The main focus of this step is making sure every pin connects to the right net node.
+      + Check every component connection pin-by-pin, including pins that are not used
+      + Check unused and NC pins are handled correctly
+   3. Check mark design against checklist **thoroughly**, making sure everything is well considered and covered even it is not mentioned in the datasheet
+4. Check review coverage, making sure every pin, every component is covered
+5. Generate report
 
-| Category | Checklists |
-|----------|------------|
-| **Power Management** | DC-DC converter, LDO, battery charger, battery management, LED driver, power switch, supervisor |
-| **Control Unit** | MCU, MPU |
-| **Analog** | Op-amp, instrumentation amp, ADC, DAC, audio amp |
-| **Connectivity** | Bus bridge, RF module, RF transceiver, I/O expander |
-| **Interface** | Electromechanical I/O, level shifter, logic gate, analog switch/mux |
-| **Memory** | DDR SDRAM, Flash |
-| **Timing** | RTC, crystal oscillator (XO) |
-| **Opto** | LED, display, photodiode, camera |
-| **Regulatory & Reliability** | EMI filter, fuse protection, isolation, ESD protection, surge protection |
+## Review Design Like a Pro
 
-**How to use:**
-1. Identify all ICs and active components in the schematic from the BOM
-2. For each, find the matching checklist in `design-checklists/<Category>/checklist_<type>_reviewed.md`
-3. Read the file and verify related item against the schematic
-
-## Review Design Against Checklist
-
-Below are some high level review rules:
+Below are some rules that professionals use. You should follow these rules to do your step 1 and step 2 review.
 
 ### 1. Review Independently
 
-Review the design independently. Don't assume design is correct. Only cross check existing design documents when review is done. 
+1. Do not assume the design is correct.
+2. Start from the design requirements only.
+3. Study the datasheet and related documents.
+4. Design your own circuits independently.
+5. Finally, compare your design with the one under review.
 
-### 2. First Step, Get Holistic View Of Design
+### 2. First, Get Holistic View Of Design
 
-+ Identify major components in the system.
-+ Collect power requirements of each component and synthesis up a system level power architecture.
-+ Collect connectivity requirements of each component and synthesis up a system level connectivity diagram.
-+ Start review from high level requirements. Don't jump into design details too quickly.
+Before diving into details, build a high-level understanding of the system:
 
-### 3. Second Step, Break Down Design And Exam Details
+1. **Identify major components** in the system.
+2. **Start aggregating power requirements** from major components and synthesize a system-level power architecture.
+3. **Start aggregating connectivity requirements** from major components and synthesize a system-level connectivity diagram.
+4. **Start the review from high-level requirements** — avoid jumping into design details too early.
 
-Break down design into subsystems and exam design details. Usually Kicad schematics has already been broken down into hierarchy or flat sheets. Each sheet often contains a subsystem or circuits that are funtionally related.
+### 3. Break Down Design
 
-Consider circuits in a signal chain as a whole during review, even they are spread out in multiple sheets, e.g.:
+Decompose the design into subsystems and examine each in detail. In KiCad schematics, the design is often already organized into hierarchical sheets or flat sheets, where each sheet typically represents a functionally related subsystem or circuit.
 
-+ Multiple pages analog circuits that include buffer stage, amplification stage, anti-aliasing filter and ADC
-+ Multiple pages power circuits that are brached out through SMPS/LDOs/power switchs/ferrite beads, e.g. 5V -> [SMPS] 3.3VCCD -> [LDO] 1.8VCCD -> [Ferrite bead] 1.8VCCA
+**Review by signal chain, not just by sheet.** Even if related circuits are spread across multiple sheets, treat them as a whole during review. Examples include:
 
-Exam these circuits with great details, yet keep in mind that they are all related and should be reviewed from system level as well as component level.
+- **Analog signal chains** spanning multiple pages: buffer stage → amplification stage → anti-aliasing filter → ADC
+- **Power distribution chains** branching through SMPS, LDOs, power switches, and ferrite beads, e.g.:
+  `5V → [SMPS] 3.3VCCD → [LDO] 1.8VCCD → [Ferrite bead] 1.8VCCA`
 
-### 4. Cover Power Domain Corner Cases
+**Examine these circuits with great attention to detail**, but always keep in mind that they are interconnected. Review them from **both** a system level (how they work together) and a component level (individual part correctness).
 
-+ Check not only norminal design values, but also all corner cases (e.g. min/max input voltage, min/max output current) to make sure design works in all circumstances.
-+ Check associated circuits if their ratings are OK in all user cases, including normal operation and corner cases, and possible faulty conditions, e.g. LED driver OVP condition due to load open circuit.
+### 4. The Devil Hides In The Details
 
-### 5. Check IO Integrity and Susceptibility
+Do not focus solely on high-level design concepts and methods. You **must** review the use and connection of **every single pin** of every component.
 
-When connecting to external devices through IOs: 
+**Action:** Check component connections pin by pin — **including NC, unused pin,** no exceptions.
 
-+ Make sure design works on its own and doesn't rely on external circuits, e.g. I2C pull-up resistors
-+ Make sure design is not susceptable to failures created by external devices. Consider fault conditions like: voltage level mismatch, IO latch-up, clock stretch, etc. Review the design to make sure in no circumstances the design would be locked up or/and damaged due to these failures. 
+### 5. Check Every Single Document Provided
 
-### 6. Protection and Safety
+A single component may have multiple documents in the `Knowledge/` folder (e.g., for an MCU: datasheet, user manual, application notes). Design details are often scattered across these documents. For example:
 
-Design shall comply with EMC and Safety regulations outlined in design requirement document.
+- I/O electrical characteristics → typically in the **datasheet**
+- I/O mux table → typically in the **user manual**
 
-Also consider below protection and safety features:
+Do **not** miss any documents during your review.
 
-+ Reverse polarity protection when generic batteries (e.g. AAA, CR2032) are used as power input
-+ Overcurrent protection (fuse/PTC) caused by common component failure, e.g. TVS failure
-+ ESD protection and EMI filters on external connectors
-+ Flyback diode on relay/inductor drivers
-+ Overvoltage protection on ports where back-EMF may occur, e.g. USB port, port with high current inductive load
+**Recommended method for tracking document contents:**
 
-### 7. Manufacturing and Assembly
+1. **Create a summary document** containing the table of contents from each relevant document.
+2. **During review**, first consult this summary document to identify:
+   - Which documents are relevant to the subject being reviewed
+   - Which chapters within those documents contain the needed information
+3. **Then**, dive deep into each identified chapter to audit the circuit against the document specifications.
 
-Check design has below features:
+### 6. Cover Corner Cases
 
-+ Test points on critical signals
-+ Programming/debug headers present
-+ Mounting holes present and correctly connected
-+ Connectors have polarization/keying
+Do not limit your review to nominal conditions. Verify that the design works correctly under **all circumstances**, including corner cases, tolerances, derating, and fault conditions.
+
+#### 6.1 Check Min/Max and Tolerance Limits
+
+- **Input/output conditions:** Verify min/max input voltage, output current, etc.
+- **Component tolerance:** Consider tolerances for resistors, inductors, capacitors, etc.
+- **Component derating:** Account for derating effects (e.g., inductance drop in inductors, capacitance loss in MLCCs under DC bias).
+
+#### 6.2 Verify Design Margins
+
+Apply these margins unless otherwise specified in the design:
+
+| Scenario                                                     | Margin Requirement   |
+| :----------------------------------------------------------- | :------------------- |
+| General worst-case (e.g., inductor rated current, resistor power rating) | ≥ 25% margin         |
+| MLCC capacitor voltage rating                                | ≥ 2× voltage applied |
+| Protection circuits (e.g., TVS standoff voltage, fuse hold current) | [5–10]% margin       |
+
+#### 6.3 Check Possible fault conditions
+
+**Example:** If an LED driver triggers overvoltage protection (OVP) due to an open load, ensure all associated circuits can safely handle the OVP voltage.
+
+### 7. Consider External Connections
+
+When the design connects to external devices through I/Os, verify both **self-sufficiency** and **fault tolerance**.
+
+#### 7.1 Ensure Self-Sufficiency
+
+The design must work on its own and **not rely on external circuits** for basic operation.
+
+> **Example:** I2C pull-up resistors must be included on the board — do not assume they are provided by an external device.
+
+#### 7.2 Ensure Tolerance to External Faults
+
+The design must not be susceptible to failures caused by external devices. Review for fault conditions including:
+
+| Fault Condition            | Description                                                  |
+| :------------------------- | :----------------------------------------------------------- |
+| Voltage level mismatch     | External device operates at different logic levels (e.g., 5V vs 3.3V) |
+| I/O latch-up               | External voltage or current injection causes parasitic SCR activation |
+| Clock stretching           | External device holds clock line low longer than expected    |
+| Overvoltage / undervoltage | External supply or signal exceeds safe limits                |
+| Back-powering              | External device powers the design through I/O pins unintentionally |
+| Stuck-at faults            | External signal stuck high or low indefinitely               |
+
+Confirm that **in no circumstances** can the design b damaged due to any of the above external fault conditions.
+
+### 8. Protection and Safety
+
+The design **shall** comply with all EMC and Safety regulations outlined in the design requirements document.
+
+In addition, verify the following protection and safety features:
+
+#### Mandatory Checks
+
+| Feature                                 | Condition / Application                                      | Notes                                                      |
+| :-------------------------------------- | :----------------------------------------------------------- | :--------------------------------------------------------- |
+| **Reverse polarity protection**         | Required when generic batteries (e.g., AAA, CR2032) are used as power input | Prevents damage from incorrect battery installation        |
+| **Overcurrent protection** (fuse / PTC) | Required when common component failures are possible (e.g., TVS short-circuit failure) | Protects against sustained overcurrent events              |
+| **ESD protection**                      | Required on all external connectors                          | Use TVS diodes, ESD arrays, etc.                           |
+| **EMI filters**                         | Required on external connectors (especially for regulatory compliance) | Common mode chokes, ferrite beads, RC filters              |
+| **Flyback diode**                       | Required across relay coils, inductor drivers, solenoids, motors | Prevents inductive kickback damage to switching elements   |
+| **Thermal protection**                  | Required for high-current or power-dissipating components    | Ensure adequate derating, thermal shutdown, or heatsinking |
+| **Overvoltage protection** (OVP)        | Required for sensitive inputs or when external supplies are unpredictable | Crowbar circuit, TVS, or clamping diodes                   |
+| **Undervoltage lockout** (UVLO)         | Required for battery-powered designs or when supply brownout could cause erratic behavior | Prevent system malfunction during low voltage              |
+
+#### Verification Goal
+
+- All required protection features are present and correctly implemented
+- Safety and EMC regulations from the design requirements are met
+
+### 9. Design For Manufacturing, Test and Assembly
+
++ **Test points** on: power rails, GND, communication buses, critical GPIOs (interrupts, control signals)
++ **Multiple GND test points** distributed on board
++ **Ferrite beads / current sense resistors / zero-ohm links** to isolate power sections for troubleshooting
++ **SWD/JTAG header** for programming/debug
++ **UART header** for debug console
++ **Mounting holes** — correct size, position, and ground connection (or isolation) as required
+
+## Check Mark Design With Checklists
+
+Use the component-specific checklists in the `design-checklists/` directory to final check mark the design. For each active component in the schematic, find the matching checklist and walk through it to catch device-specific details that a high-level review might miss.
+
+**Available checklists for detailed examination:**
+
+| Category                     | Checklists                                                   |
+| :--------------------------- | :----------------------------------------------------------- |
+| **Power Management**         | DC-DC converter, LDO, battery charger, battery management, LED driver, power switch, supervisor |
+| **Control Unit**             | MCU, MPU                                                     |
+| **Analog**                   | Op-amp, instrumentation amp, ADC, DAC, audio amp             |
+| **Connectivity**             | Bus bridge, RF module, RF transceiver, I/O expander          |
+| **Interface**                | Electromechanical I/O, level shifter, logic gate, analog switch/mux |
+| **Memory**                   | DDR SDRAM, Flash                                             |
+| **Timing**                   | RTC, crystal oscillator (XO)                                 |
+| **Opto**                     | LED, display, photodiode, camera                             |
+| **Regulatory & Reliability** | EMI filter, fuse protection, isolation, ESD protection, surge protection |
+
+**How to examine details with checklists:**
+
+1. Identify all ICs and active components in the schematic from the BOM
+2. For each component, find the matching checklist in `design-checklists/<Category>/checklist_<type>_reviewed.md`
+3. Walk through each checklist item and verify against the schematics — pin by pin, cap by cap, resistor by resistor
 
 ## Review Coverage Requirements
 
-+ Review shall 100% cover all components
+Review shall **100% cover all components and all pins**
 
 ## Generate Well-Formatted Review Report
 
-Some consideraton when generating the review report:
+After completing all review sections, generate a comprehensive review report following the guidelines below.
 
-+ Use Mermaid skill to generate images when presenting diagrams or power trees to user
-+ Use tables to present review results. Table shall at least have below items:
-  + Design requirement
-  + Your independent calculations/finding/decisions based on design requirements and datasheets
-  + What's in current design
-  + Pass/fail/conclusion/suggestion
-+ Organize review results by functions, or by components, or by review categories, whichever best fits
-+ Use severity levels
+### Use Diagrams for Visual Clarity
 
+When presenting system architecture, power trees, connectivity diagrams, or signal chains, **use drawio skill** to generate diagrams. This helps the user visualize complex relationships clearly.
+
+### Use Tables for Review Results
+
+Present findings using **three complementary table formats** — one organized by subsystem with line-item breakdown, one by component with pin-level detail, and one check mark based on the checklist.
+
+#### Table A: For Step 1 Top Down Review
+
+Organize findings by logical subsystems. Within each subsystem, break down the review into individual **items** (e.g., components or design aspects).
+
+**Example — Buck Converter Subsystem:**
+
+| Subsystem                 | Item                | Design Requirement                                           | Independent Calculation / Finding                            | Current Design                       | Pass / Fail / Conclusion / Suggestion                   | Severity |
+| :------------------------ | :------------------ | :----------------------------------------------------------- | :----------------------------------------------------------- | :----------------------------------- | :------------------------------------------------------ | :------- |
+| Buck Converter (12V → 5V) | Input capacitor     | Low ESR, handle ripple current. Typically 10µF recommended per datasheet | Required C_in ≥ 10µF, voltage rating ≥ 2× V_in_max = 25V min | 10µF, 25V, X7R                       | **Pass**                                                | -        |
+| Buck Converter (12V → 5V) | Output capacitor    | 22µF min, low ESR for stability                              | Calculated C_out = 22µF, voltage rating ≥ 10V                | 22µF, 16V, X5R                       | **Pass**                                                | -        |
+| Buck Converter (12V → 5V) | Inductor            | 4.7µH ±20%, saturation current ≥ load current + ½ ripple     | I_sat_req = 1.2A + 0.3A = 1.5A min                           | 4.7µH, I_sat = 1.8A                  | **Pass**                                                | -        |
+| Buck Converter (12V → 5V) | Feedback resistors  | V_out = V_ref × (1 + R1/R2), V_ref = 0.8V, target 5V → R1/R2 = 5.25 | R1 = 52.5kΩ, R2 = 10kΩ → 5.0V                                | R1 = 51kΩ, R2 = 10kΩ → V_out = 4.88V | **Fail:** Change R1 to 52.5kΩ (use 52.3kΩ 1% or 52.5kΩ) | Medium   |
+| Buck Converter (12V → 5V) | Bootstrap capacitor | 100nF recommended per datasheet                              | 100nF, 10V min rating                                        | 100nF, 10V                           | **Pass**                                                | -        |
+| Buck Converter (12V → 5V) | Enable pin          | EN threshold: >1.2V to enable, <0.4V to disable              | Connect to V_in via voltage divider for UVLO or direct to V_in | Pulled directly to V_in              | **Pass** (UVLO not required for this design)            | -        |
+
+**Example — I2C Communication Subsystem:**
+
+| Subsystem     | Item               | Design Requirement                               | Independent Calculation / Finding                      | Current Design         | Pass / Fail / Conclusion / Suggestion                        | Severity |
+| :------------ | :----------------- | :----------------------------------------------- | :----------------------------------------------------- | :--------------------- | :----------------------------------------------------------- | :------- |
+| I2C Subsystem | Pull-up resistors  | Rp = 4.7kΩ for 3.3V @ 400kHz                     | Rp = 4.7kΩ (max bus cap ~200pF from 2 devices + trace) | No pull-ups on SDA/SCL | **Fail:** Add 4.7kΩ resistors                                | High     |
+| I2C Subsystem | Series termination | Optional for EMI reduction, 33Ω–100Ω recommended | 47Ω on SCL, 47Ω on SDA (close to master)               | No series resistors    | **Suggestion:** Add 0Ω resistors (optional populate 47Ω if needed) | Low      |
+
+#### Table B: For Step 2 Bottom Up Pin-by-Pin Review
+
+For **all active components and passive components with polarity, provide a pin-by-pin review** using the table below. **Important: Pin-by-pin review must include all pins, including NC and not used pins**
+
+**Example:**
+
+| Component         | Pin Name / Number         | Design Requirement                         | Independent Finding (from datasheet)                         | Current Connection                                    | Pass / Fail / Conclusion / Suggestion                      | Severity |
+| :---------------- | :------------------------ | :----------------------------------------- | :----------------------------------------------------------- | :---------------------------------------------------- | :--------------------------------------------------------- | :------- |
+| MCU (STM32F103)   | PA9 / USART1_TX (Pin 30)  | 3.3V logic level, 8mA drive typical        | Need pull-up? No, push-pull output ok                        | Connected to UART header pin 2 via 0Ω series resistor | **Pass**                                                   | -        |
+| MCU (STM32F103)   | PA10 / USART1_RX (Pin 31) | 3.3V logic input, 5V tolerant              | Input high: 0.7×VDD=2.31V min                                | Connected to UART header pin 3                        | **Pass**                                                   | -        |
+| MCU (STM32F103)   | PB2 / BOOT1 (Pin 54)      | Should be low at boot for normal operation | Internal pull-down weak. Recommend external 10k pull-down for stability | Left floating                                         | **Fail:** Add 10k pull-down resistor to GND                | Medium   |
+| LDO (AMS1117-3.3) | VIN (Pin 1)               | Input 4.5V to 12V (per datasheet)          | Input cap: 10µF min, output cap: 22µF (tantalum recommended) | VIN from 5V rail. Input cap: 1µF only                 | **Fail:** Increase input cap to 10µF. Add output cap 22µF. | High     |
+
+#### Table C: Checklist Item Verification (Checklist-Based)
+
+When walking through component-specific design checklists (from `design-checklists/`), use this table to document the verification of each checklist item for each component. Each row tracks one checklist item against one component.
+
+**Example — DC-DC Converter Checklist applied to U1 (TPS54560):**
+
+| Component | Checklist Reference | Checklist Item | Requirement / Expectation | Current Design Finding | Pass / Fail / Conclusion / Suggestion | Severity |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| Buck: U1 (TPS54560) | DC-DC Checklist §3.1 | Input capacitor ≥ 10µF, voltage ≥ 25V | Required per datasheet table on p.12 | 10µF, 25V, X7R | **Pass** | - |
+| Buck: U1 (TPS54560) | DC-DC Checklist §3.2 | Boot capacitor ≥ 100nF, ≥ 10V | Required per datasheet §8.3.1 | 100nF, 16V | **Pass** | - |
+| Buck: U1 (TPS54560) | DC-DC Checklist §3.5 | EN pin not left floating; must have pull-up/pull-down or direct tie | EN pin must not be undefined at power-up | Pulled to VIN via 100kΩ | **Pass** | - |
+| Buck: U1 (TPS54560) | DC-DC Checklist §4.1 | Soft-start pin: capacitor sets soft-start time | C_SS = 10nF → t_ss ≈ 2.5ms per datasheet formula (7) | C_SS = 10nF | **Pass** | - |
+| MCU: U2 (STM32F103) | MCU Checklist §5.1 | VDDA decoupling: 100nF + 10µF per VDDA/VDDA pair | Required per datasheet §3.2 | Only 100nF on VDDA, no 10µF | **Fail:** Add 10µF capacitor close to VDDA pin | High |
+
+#### Summary of Table Usage
+
+| Table Type                                       | When to Use                                                  | Primary Focus                                                |
+| :----------------------------------------------- | :----------------------------------------------------------- | :----------------------------------------------------------- |
+| **Table A: By Subsystem (with Items)**           | Overall review organization, subsystem-level breakdown       | Item-by-item verification within each subsystem (e.g., input cap, inductor, feedback resistors) |
+| **Table B: By Component (Pin-by-Pin)**           | Deep-dive on ICs, connectors, or polarized components        | Every single pin connection, configuration, and electrical compatibility |
+| **Table C: By Checklist Item (Checklist-Based)** | Walking through component-specific design checklists for active components | Item-by-item verification against design checklists (e.g., DC-DC checklist, MCU checklist) |
+
+### Organize Review Results Logically
+
+Structure the report by **subsystem**, as this aligns with Table A. Within each subsystem, present Table A entries for line items, followed by Table B entries for any critical components requiring pin-level review.
+
+**Recommended report structure:**
+
+text
+
+```
+## Review Report
+
+### System overview
+System overview with diagrams and power trees
+
+### Subsystem: Buck Converter (12V → 5V)
+[Table A entries for this subsystem — input cap, output cap, inductor, feedback resistors, etc.]
+[Table B for components used in buck converter]
+
+### Subsystem: Digital Control (MCU)
+[Table A entries for high-level MCU subsystem items]
+[Table B for MCU — all pins reviewed]
+
+### Subsystem: ADC
+[Table A entries for this subsystem — ADC, Opamps, Clock]
+[Table B for components used]
+```
+
+------
+
+### Use Severity Levels for Issues
+
+For each finding that is **not a Pass**, assign a severity level:
+
+| Severity          | Meaning                                                      | Action Required                 |
+| :---------------- | :----------------------------------------------------------- | :------------------------------ |
+| **Critical**      | Will cause damage, safety hazard, or complete non-function   | Must fix before prototype       |
+| **High**          | Likely to cause malfunction or reliability issue             | Should fix before next revision |
+| **Medium**        | May cause issue under corner cases or marginal conditions    | Recommend to fix                |
+| **Low**           | Minor issue, best practice violation, or improvement opportunity | Nice to fix or note for future  |
+| **Informational** | Observation, not an issue                                    | No action required              |
+
+------
+
+### Include a Report Summary
+
+| Subsystem                 | Critical | High  | Medium | Low   | Informational |
+| :------------------------ | :------- | :---- | :----- | :---- | :------------ |
+| Buck Converter (12V → 5V) | 0        | 0     | 1      | 0     | 0             |
+| I2C Subsystem             | 0        | 1     | 0      | 1     | 0             |
+| Digital Control (MCU)     | 0        | 0     | 1      | 0     | 0             |
+| LDO (5V → 3.3V)           | 0        | 1     | 0      | 0     | 0             |
+| **Total**                 | **0**    | **2** | **2**  | **1** | **0**         |
