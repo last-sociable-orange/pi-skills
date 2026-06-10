@@ -166,10 +166,6 @@ Use the component-specific checklists in the `design-checklists/` directory to f
 2. For each component, find the matching checklist in `design-checklists/<Category>/checklist_<type>_reviewed.md`
 3. Walk through each checklist item and verify against the schematics — pin by pin, cap by cap, resistor by resistor
 
-## Review Coverage Requirements
-
-Review shall **100% cover all components and all pins**
-
 ## Generate Well-Formatted Review Report
 
 After completing all review sections, generate a comprehensive review report following the guidelines below.
@@ -182,7 +178,7 @@ When presenting system architecture, power trees, connectivity diagrams, or sign
 
 Present findings using **three complementary table formats** — one organized by subsystem with line-item breakdown, one by component with pin-level detail, and one check mark based on the checklist.
 
-#### Table A: For Step 1 Top Down Review
+#### Table A: For Top Down Review
 
 Organize findings by logical subsystems. Within each subsystem, break down the review into individual **items** (e.g., components or design aspects).
 
@@ -204,9 +200,15 @@ Organize findings by logical subsystems. Within each subsystem, break down the r
 | I2C Subsystem | Pull-up resistors  | Rp = 4.7kΩ for 3.3V @ 400kHz                     | Rp = 4.7kΩ (max bus cap ~200pF from 2 devices + trace) | No pull-ups on SDA/SCL | **Fail:** Add 4.7kΩ resistors                                | High     |
 | I2C Subsystem | Series termination | Optional for EMI reduction, 33Ω–100Ω recommended | 47Ω on SCL, 47Ω on SDA (close to master)               | No series resistors    | **Suggestion:** Add 0Ω resistors (optional populate 47Ω if needed) | Low      |
 
-#### Table B: For Step 2 Bottom Up Pin-by-Pin Review
+#### Table B: For Bottom Up Pin-by-Pin Review
 
-For **all active components and passive components with polarity, provide a pin-by-pin review** using the table below. **Important: Pin-by-pin review must include all pins, including NC and not used pins**
+provide a pin-by-pin review using the table below. 
+
+**Important: Pin-by-pin review must include:** 
+
++ **All pins, including NC and not used pins**
+
++ **All components, including active and passive components**
 
 **Example:**
 
@@ -291,3 +293,11 @@ For each finding that is **not a Pass**, assign a severity level:
 | Digital Control (MCU)     | 0        | 0     | 1      | 0     | 0             |
 | LDO (5V → 3.3V)           | 0        | 1     | 0      | 0     | 0             |
 | **Total**                 | **0**    | **2** | **2**  | **1** | **0**         |
+
+## Review Quality Check List
+
+- [ ] Review shall **100% cover all components and all pins**
+
+- [ ] Review shall check all documents provided
+
+  
