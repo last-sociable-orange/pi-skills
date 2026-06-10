@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: kicad-sch-analyzer
+Version: 0.1.0
+Summary: High-level KiCad schematic analysis tool — list components, nets, and pin connections
+Project-URL: Source, https://github.com/circuithub/kicad-sch-analyzer
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: kicad-skip
