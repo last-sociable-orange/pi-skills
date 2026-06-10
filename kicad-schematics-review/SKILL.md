@@ -5,86 +5,16 @@ description: "Use this skill to review KiCad schematic files (.kicad_sch) for co
 
 # KiCad Schematics Review
 
-A structured checklist for reviewing KiCad schematic files.
-
-## Preparation
-
-Check BOM and netlist in project folder. Follow below steps if they are not available.
-
-### 1. BOM
-
-If BOM is not ready in the project folder, you can generate it using `kicad-cli`. Command may vary depending on your project setup and Kicad installation method and location. 
-
-```bash
-flatpak run --command=/app/bin/kicad-cli org.kicad.KiCad sch export bom \
-  --fields "Reference,Description,ManufacturerProductNumber,DNP,Exclude from BOM" \
-  -o <InputFile_BOM>.csv <InputFile>.kicad_sch
-```
-
-`Exclude from BOM` parts can be ignored during the review, however you need to check if `DNP` parts are set correctly.
-
-### 2. netlist
-
-If netlists ( Orcadpcb2 and PADS format) are not ready, you can generate them using below commands.
-
-```bash
-# OrCAD PCB2 format, generating a *.net file
-flatpak run --command=/app/bin/kicad-cli org.kicad.KiCad sch export netlist --format orcadpcb2 FlightController.kicad_sch
-
-# PADS format, generating a *.asc file
-flatpak run --command=/app/bin/kicad-cli org.kicad.KiCad sch export netlist --format pads FlightController.kicad_sch
-```
-
-+ Orcadpcb2 format provides connection information from component's view. It lays out how each pin of a component is connected. 
-+ PADS format provides connection information from net's view. It lays out what are connected to a single net.
-+ A connection tree can be established from above two netlists.
-
-### 3. Collect component datasheets and parameters
-
-+ Look for `Knowledge/` folder in the project directory. It is the **ONLY** source of datasheets and user manuals. Reference them during the review.
-+ For passive discretes: Check component's description in BOM for value and critical parameters, e.g. capacitor type, rated voltage, resistor power rating, tolerance. Or check `Knowledge/` folder for datasheets. 
-+ Ask user for datasheets if nothing is found from above sources.
-
-### 4. Collect design requirements and existing design documents
-
-Check `Document/` folder in the project directory for existing design requirements and documents where design procedures and decisions are documented.
-
-+ `Document/` folder is the **ONLY** source of information for design requirements and design documents.
-+ User must provide `Design Specification Document` that contains system level design requirements.
-
-### 5. Use Drawio Skill
-
-Use it to generate block diagrams, power trees, circuits if you want to show component level connections, etc.,  Insert pictures in the markdown file and keep the original .drawio for user's future use.
-
-## A Practical Review Work Flow
-
-Here is a practical review work flow. Details are explained in later chapters.
-
-1. Check BOM/Netlist/Documents readiness
-2. High level grasp of system level design requirements, connectivity and power tree
-3. Break down design into subsystems and review them thoroughly against documents in `Knowledge/` and `Document`. This is a 3 steps process:
-   1. Review design from top down. The main focus of this step is making sure components and values used in design meet design requirements and design guidance from manufacturer.
-      + Start review from high level design requirements, e.g. input/output, connectivities. 
-      + Calculate design parameters from scratch using the information given in datasheet/design guide/application note in `Knowledge/` directory
-      + Check component selection and values considering corner cases and design margin
-   2. Review design from bottom up. The main focus of this step is making sure every pin connects to the right net node.
-      + Check every component connection pin-by-pin, including pins that are not used
-      + Check unused and NC pins are handled correctly
-   3. Check mark design against checklist **thoroughly**, making sure everything is well considered and covered even it is not mentioned in the datasheet
-4. Check review coverage, making sure every pin, every component is covered
-5. Generate report
-
 ## Review Design Like a Pro
 
-Below are some rules that professionals use. You should follow these rules to do your step 1 and step 2 review.
+Below are some rules that professionals use to review schematics design. You **MUST** follow these rules.
 
 ### 1. Review Independently
 
 1. Do not assume the design is correct.
-2. Start from the design requirements only.
-3. Study the datasheet and related documents.
-4. Design your own circuits independently.
-5. Finally, compare your design with the one under review.
+2. Start from the design requirements.
+3. Study datasheet and every single document provided.
+4. Design your circuits independently. Don't use existing circuit as a reference.
 
 ### 2. First, Get Holistic View Of Design
 
