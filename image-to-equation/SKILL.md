@@ -25,11 +25,13 @@ Before proceeding, verify that you can receive and process image input. You can 
 - The `read` tool description — it states it supports image file types (jpg, png, gif, webp) and sends images as attachments
 - The model you're running on supports vision/ multimodal inputs
 
-If you cannot receive images, inform the user and abort. No processing can happen without this capability.
+If you cannot receive images, inform the user and **ABORT**. No processing can happen without this capability.
 
-### Step 2: Assess the Scope
+### Step 2: Prepare Image List
 
-Look at the markdown file the user provided. Count how many images (e.g., `![](...)` references or `<img>` tags) contain equations that need processing.
+Prepare image list by filtering out images larger than 25KB.
+
+Check images in `images/` path, filter out images that are larger than 25KB, only count images with file size smaller than 25KB. 
 
 **If the count exceeds 50 images**, ask the user to confirm before proceeding. Explain that this is a manual, one-at-a-time process requiring your visual attention for each image.
 
